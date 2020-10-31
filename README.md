@@ -2,56 +2,116 @@
 
 ![exoplanets.jpg](Images/exoplanets.jpg)
 
-### Before You Begin
-
-1. Create a new repository for this project called `machine-learning-challenge`. **Do not add this homework to an existing repository**.
-
-2. Clone the new repository to your computer.
-
-3. Give each model you choose their own Jupyter notebook, **do not use more than one model per notebook.**
-
-4. Save your best model to a file. This will be the model used to test your accuracy and used for grading.
-
-5. Commit your Jupyter notebooks and model file and push them to GitHub.
-
-## Note
-
-Keep in mind that this homework is optional! However, you will gain a much greater understanding of testing and tuning different Classification models if you do complete it.
-
-## Background
-
-Over a period of nine years in deep space, the NASA Kepler space telescope has been out on a planet-hunting mission to discover hidden planets outside of our solar system.
-
-To help process this data, you will create machine learning models capable of classifying candidate exoplanets from the raw dataset.
-
-In this homework assignment, you will need to:
-
-1. [Preprocess the raw data](#Preprocessing)
-2. [Tune the models](#Tune-Model-Parameters)
-3. [Compare two or more models](#Evaluate-Model-Performance)
-
-- - -
-
-## Instructions
-
-### Preprocess the Data
-
-* Preprocess the dataset prior to fitting the model.
-* Perform feature selection and remove unnecessary features.
-* Use `MinMaxScaler` to scale the numerical data.
-* Separate the data into training and testing data.
-
-### Tune Model Parameters
-
-* Use `GridSearch` to tune model parameters.
-* Tune and compare at least two different classifiers.
-
 ### Reporting
 
-* Create a README that reports a comparison of each model's performance as well as a summary about your findings and any assumptions you can make based on your model (is your model good enough to predict new exoplanets? Why or why not? What would make your model be better at predicting new exoplanets?).
+Working with both Linear and Logistic Regression I took the cleaned data and returned these results:
 
+* Set up the Dataframe for ML
+```
+df = pd.read_csv("exoplanet_data.csv")
+# Drop the null columns where all values are null
+df = df.dropna(axis='columns', how='all')
+# Drop the null rows
+df = df.dropna()
+df.head()
+
+# Set features. This will also be used as your x values.
+selected_features = df[['koi_fpflag_nt', 'koi_fpflag_ss', 'koi_fpflag_co', 'koi_fpflag_ec', 'koi_period','koi_period_err1','koi_period_err2',
+                       'koi_time0bk','koi_time0bk_err1','koi_time0bk_err2','koi_impact','koi_impact_err1','koi_impact_err2','koi_duration','koi_duration_err1',
+                       'koi_duration_err2','koi_depth','koi_depth_err1','koi_depth_err2','koi_prad','koi_prad_err1','koi_prad_err2','koi_teq','koi_insol',
+                       'koi_insol_err1','koi_insol_err2','koi_model_snr','koi_tce_plnt_num','koi_steff','koi_steff_err1','koi_steff_err2','koi_slogg','koi_slogg_err1',
+                       'koi_slogg_err2','koi_srad','koi_srad_err1','koi_srad_err2','ra','dec','koi_kepmag']]
+
+y = df['koi_disposition']
+X = selected_features       
+                       
+```
+* Import Sklearn processes
+```
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X,y, random_state=30)
+
+# Scale your data
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.utils import to_categorical
+X_scaler = MinMaxScaler().fit(X_train)
+X_train_scale = X_scaler.transform(X_train)
+X_test_scale = X_scaler.transform(X_test)
+
+* Linear Modeling
+from sklearn.svm import SVC 
+model = SVC(kernel='linear')
+model.fit(X_train_scaled, y_train)
+predictions = model.predict(X_test)
+
+* Logistic Modeling
+from sklearn.linear_model import LogisticRegression
+classifier = LogisticRegression(penalty='l2')
+model2 = classifier.fit(X_train_scaled, y_train)
+```
+* Print out the Scores
+
+```
+* Linear Test Scores
+print(f"Training Data Score: {model.score(X_train_scaled, y_train)}")
+print(f"Testing Data Score: {model.score(X_test_scaled, y_test)}")
+
+Training Data Score: 0.8373068853709709
+Testing Data Score: 0.8558352402745996
+
+* Logistic Test Scores
+print(f"Training Data Score: {model2.score(X_train_scaled, y_train)}")
+print(f"Testing Data Score: {model2.score(X_test_scaled, y_test)}")
+
+Training Data Score: 0.8458897577722678
+Testing Data Score: 0.8621281464530892
+
+```
+* Begin Tuning
+
+```
+* For Linear
+from sklearn.model_selection import GridSearchCV
+param_grid = {'penalty': ['l1', 'l2'],
+    'C': [1, 5, 10, 50],
+              'gamma': [0.0001, 0.0005, 0.001, 0.005]}
+grid = GridSearchCV(model, param_grid, verbose=3)
+
+print(grid.best_params_)
+print(grid.best_score_)
+
+{'C': 50, 'gamma': 0.0001}
+0.8781203836441831
+
+* For Logistic
+from sklearn.model_selection import GridSearchCV
+param_grid = {'C': [0.01, 0.1, 1, 10, 100]}
+grid = GridSearchCV(model, param_grid, verbose=3)
+
+print(grid.best_params_)
+print(grid.best_score_)
+
+{'C': 100}
+0.8701116657812966
+```
+* Finally, save the models using joblib to designated SAV files.
+```
+import joblib
+filename = 'MODEL1.sav'
+joblib.dump(model, filename)
+
+import joblib
+filename = 'MODEL2.sav'
+joblib.dump(model2, filename)
+```
 - - -
 
+
+## Conclusion
+
+As we can see against each test/train score, the Logistic method produced somewhat more accurate results in comparison to Linear. 
+
+- - -
 ## Resources
 
 * [Exoplanet Data Source](https://www.kaggle.com/nasa/kepler-exoplanet-search-results)
@@ -62,30 +122,4 @@ In this homework assignment, you will need to:
 
 * [Grid Search](https://scikit-learn.org/stable/modules/grid_search.html)
 
-- - -
 
-## Hints and Considerations
-
-* Start by cleaning the data, removing unnecessary columns, and scaling the data.
-
-* Not all variables are significant be sure to remove any insignificant variables.
-
-* Make sure your `sklearn` package is up to date.
-
-* Try a simple model first, and then tune the model using `GridSearch`.
-
-- - -
-
-## Submission
-
-* Create a Jupyter Notebook for each model and host the notebooks on GitHub.
-
-* Create a file for your best model and push to GitHub
-
-* Include a README.md file that summarizes your assumptions and findings.
-
-* Submit the link to your GitHub project to Bootcamp Spot.
-
-* Ensure your repository has regular commits (i.e. 20+ commits) and a thorough README.md file
-
-##### © 2019 Trilogy Education Services, a 2U, Inc. brand. All Rights Reserved.
